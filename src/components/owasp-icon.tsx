@@ -11,6 +11,16 @@ import {
   ServerCog,
   LucideProps,
   Code,
+  Languages,
+  EyeOff,
+  PackageSearch,
+  TestTube,
+  ShieldAlert,
+  Bot,
+  FileQuestion,
+  Database,
+  LightbulbOff,
+  Fuel,
 } from 'lucide-react';
 
 const iconMap: Record<string, React.ComponentType<LucideProps>> = {
@@ -25,6 +35,16 @@ const iconMap: Record<string, React.ComponentType<LucideProps>> = {
   A08: FileCheck2,
   A09: FileClock,
   A10: ServerCog,
+  LLM01: Languages,
+  LLM02: EyeOff,
+  LLM03: PackageSearch,
+  LLM04: TestTube,
+  LLM05: ShieldAlert,
+  LLM06: Bot,
+  LLM07: FileQuestion,
+  LLM08: Database,
+  LLM09: LightbulbOff,
+  LLM10: Fuel,
 };
 
 type OwaspIconProps = LucideProps & {
