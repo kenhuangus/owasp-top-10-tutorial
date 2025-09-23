@@ -2,43 +2,59 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useTheme } from 'next-themes';
 
 type MermaidDiagramProps = {
   chart: string;
 };
 
+// Add a global declaration for the mermaid object
+declare global {
+  interface Window {
+    mermaid?: any;
+  }
+}
+
 export function MermaidDiagram({ chart }: MermaidDiagramProps) {
   const [svg, setSvg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    let isMounted = true;
-    const renderMermaid = async () => {
-      try {
-        const mermaid = (await import('mermaid')).default;
-        mermaid.initialize({
-          startOnLoad: false,
-          theme: 'default',
-          securityLevel: 'loose',
-        });
-        const { svg: renderedSvg } = await mermaid.render(`mermaid-${Math.random().toString(36).substring(7)}`, chart);
-        if (isMounted) {
-          setSvg(renderedSvg);
-          setError(null);
+    if (window.mermaid) {
+      setIsLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isLoaded && chart) {
+      let isMounted = true;
+      const renderMermaid = async () => {
+        try {
+          // The mermaid object is now globally available from the CDN script
+          window.mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            securityLevel: 'loose',
+          });
+          const { svg: renderedSvg } = await window.mermaid.render(`mermaid-${Math.random().toString(36).substring(7)}`, chart);
+          if (isMounted) {
+            setSvg(renderedSvg);
+            setError(null);
+          }
+        } catch (e: any) {
+          console.error("Mermaid rendering error:", e);
+          if (isMounted) {
+            setError(e.message || "Error rendering diagram.");
+            setSvg(null);
+          }
         }
-      } catch (e: any) {
-        if (isMounted) {
-          setError(e.message || "Error rendering diagram.");
-          setSvg(null);
-        }
-      }
-    };
-    renderMermaid();
-    return () => {
-      isMounted = false;
-    };
-  }, [chart]);
+      };
+      renderMermaid();
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [chart, isLoaded]);
 
   if (error) {
     return (
@@ -49,7 +65,7 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
     );
   }
 
-  if (!svg) {
+  if (!isLoaded || !svg) {
     return <div>Loading diagram...</div>;
   }
 
