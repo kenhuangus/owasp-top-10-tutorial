@@ -6,7 +6,7 @@ export type Vulnerability = {
   description: string;
   longDescription: string;
   impact: string;
-  diagramId: string;
+  diagramCode: string;
   vulnerableCode: {
     language: string;
     code: string;
@@ -25,7 +25,21 @@ export const owaspTop10: Vulnerability[] = [
     description: 'Enforcing restrictions on authenticated users.',
     longDescription: '• Restricts user actions based on permissions.\n• Failures lead to unauthorized data access/modification.\n• Common exploits: IDOR, privilege escalation, path traversal.',
     impact: 'Unauthorized access to sensitive data or functionality, potentially leading to full system compromise.',
-    diagramId: 'diagram-broken-access-control',
+    diagramCode: `flowchart TD
+    subgraph "Legitimate User"
+        A["User requests '/user/123/profile'"] --> B["Server checks authentication"];
+        B --> C["User is authenticated"];
+        C --> D["FAIL: No authorization check"];
+        D --> E["Server returns User 123's profile"];
+    end
+    subgraph "Attacker"
+        F["Attacker changes ID in URL to '/user/456/profile'"] --> G["Server checks authentication"];
+        G --> H["Attacker is authenticated (as themselves)"];
+        H --> I["FAIL: No authorization check for requested resource"];
+        I --> J["Server returns User 456's profile"];
+    end
+    style D fill:#f8d7da,stroke:#f5c6cb
+    style I fill:#f8d7da,stroke:#f5c6cb`,
     vulnerableCode: {
       language: 'Node.js',
       code: `app.get('/user/:id/invoice', (req, res) => {
@@ -54,7 +68,18 @@ export const owaspTop10: Vulnerability[] = [
     description: 'Failures related to cryptography.',
     longDescription: '• Failures in cryptography leading to data exposure.\n• Common issues: cleartext data, weak algorithms, poor key management.\n• Example: Using MD5 for hashing passwords.',
     impact: 'Exposure of sensitive data like passwords, credit card numbers, and personal information.',
-    diagramId: 'diagram-cryptographic-failures',
+    diagramCode: `flowchart TD
+    subgraph "Initial Storage"
+        A["User provides password"] --> B["Server receives password"];
+        B --> C["FAIL: Hashes with weak algorithm (e.g., MD5)"];
+        C --> D["Stores weak hash in database"];
+    end
+    subgraph "Attack"
+        E["Attacker gains database access"] --> F["Retrieves all weakly-hashed passwords"];
+        F --> G["Uses pre-computed rainbow table to find MD5 matches"];
+        G --> H["Plaintext passwords revealed"];
+    end
+    style C fill:#f8d7da,stroke:#f5c6cb`,
     vulnerableCode: {
       language: 'Java',
       code: `// Vulnerable: Using a weak hashing algorithm (MD5)
@@ -75,7 +100,14 @@ String hash = argon2.hash(10, 65536, 1, password.toCharArray());`,
     description: 'Untrusted data sent to an interpreter.',
     longDescription: '• Untrusted data sent to a code interpreter.\n• Examples: SQL, NoSQL, OS command, LDAP injection.\n• Tricks interpreter into executing unintended commands.',
     impact: 'Can result in data loss, corruption, or disclosure to unauthorized parties, leading to denial of service or complete host takeover.',
-    diagramId: 'diagram-injection',
+    diagramCode: `flowchart TD
+    A["Attacker enters malicious input: ' OR '1'='1'"] --> B["Application server"];
+    B --> C["FAIL: Application concatenates input directly into SQL query"];
+    C --> D["Query becomes: SELECT * FROM users WHERE name = '' OR '1'='1'"];
+    D --> E["Database executes query"];
+    E --> F["Database returns ALL user records to application"];
+    F --> G["Application displays all user records to attacker"];
+    style C fill:#f8d7da,stroke:#f5c6cb`,
     vulnerableCode: {
       language: 'PHP',
       code: `$username = $_POST['username'];
@@ -100,7 +132,23 @@ $result = $stmt->get_result();`,
     description: 'Missing or ineffective control design.',
     longDescription: '• Flaws in application design and architecture.\n• "Missing or ineffective control design".\n• Security should be foundational, not an afterthought.',
     impact: 'Vulnerabilities can be deeply embedded in the application, making them difficult to fix and potentially leading to a wide range of security issues.',
-    diagramId: 'diagram-insecure-design',
+    diagramCode: `flowchart TD
+    subgraph "Flawed Design: Ticket Purchase"
+        A["User selects 2 tickets at $10 each"] --> B["Client-side JS calculates total: $20"];
+        B --> C["Request sent to server: { quantity: 2, total: 20 }"];
+        C --> D["Server receives data"];
+        D --> E["FAIL: Server trusts the 'total' from client instead of recalculating"];
+        E --> F["Payment processor is charged $20"];
+    end
+    subgraph "Attack Scenario"
+        G["Attacker selects 2 tickets at $10 each"] --> H["Attacker manipulates client-side request"];
+        H --> I["Request sent to server: { quantity: 2, total: 1 }"];
+        I --> J["Server receives data"];
+        J --> K["FAIL: Server trusts the 'total' from client instead of recalculating"];
+        K --> L["Payment processor is charged $1"];
+    end
+    style E fill:#f8d7da,stroke:#f5c6cb
+    style K fill:#f8d7da,stroke:#f5c6cb`,
     vulnerableCode: {
       language: 'Concept',
       code: `// Flawed Design: A password reset process that sends the old
@@ -130,7 +178,19 @@ function resetPassword(email) {
     description: 'Incorrect security configurations.',
     longDescription: '• Occurs at any level of the application stack.\n• Examples: debug mode in production, unnecessary open ports, default passwords.\n• Often easy for attackers to exploit.',
     impact: 'Can lead to unauthorized access, sensitive data exposure, or full system compromise, often with minimal effort from an attacker.',
-    diagramId: 'diagram-security-misconfiguration',
+    diagramCode: `flowchart TD
+    subgraph "Cloud Storage Misconfiguration"
+        A["Admin configures S3 bucket"] --> B["FAIL: Sets permissions to public read/write"];
+        C["Attacker scans for open S3 buckets"] --> D["Finds public bucket"];
+        D --> E["Accesses/modifies sensitive files"];
+    end
+    subgraph "Default Credentials"
+        F["Admin deploys new server"] --> G["FAIL: Leaves default admin password 'admin:password'"];
+        H["Attacker scans for admin login pages"] --> I["Tries common default credentials"];
+        I --> J["Gains full admin access to the server"];
+    end
+    style B fill:#f8d7da,stroke:#f5c6cb
+    style G fill:#f8d7da,stroke:#f5c6cb`,
     vulnerableCode: {
       language: 'YAML (Config)',
       code: `# Vulnerable: Directory listing is enabled on a web server,
@@ -156,7 +216,13 @@ function resetPassword(email) {
     description: 'Components with known vulnerabilities.',
     longDescription: '• Using libraries, frameworks with known vulnerabilities.\n• Components run with the same privileges as the application.\n• Can undermine application defenses.',
     impact: 'Can range from minor issues to complete system takeover, depending on the vulnerability in the component.',
-    diagramId: 'diagram-vulnerable-components',
+    diagramCode: `flowchart TD
+    A["Developer uses outdated library 'image-lib 1.2'"] --> B["Application is deployed"];
+    C["A security vulnerability (CVE-2023-1234) is found in 'image-lib 1.2'"] --> D["A patched version 'image-lib 1.3' is released"];
+    E["Attacker scans the internet for sites using 'image-lib 1.2'"] --> F["Finds the vulnerable application"];
+    F --> G["FAIL: Application is running the vulnerable code"];
+    G --> H["Attacker exploits the CVE to achieve Remote Code Execution"];
+    style G fill:#f8d7da,stroke:#f5c6cb`,
     vulnerableCode: {
       language: 'package.json',
       code: `// Vulnerable: Using an old, known-vulnerable version of a library.
@@ -183,7 +249,21 @@ function resetPassword(email) {
     description: 'Incorrect authentication and session management.',
     longDescription: '• Incorrect implementation of identity and session management.\n• Allows attackers to compromise passwords, keys, or session tokens.\n• Common attacks: brute force, credential stuffing.',
     impact: 'Attackers can gain control of user accounts and potentially the entire system.',
-    diagramId: 'diagram-authentication-failures',
+    diagramCode: `flowchart TD
+    subgraph "Attack Vector: No Rate Limiting"
+      A["Attacker picks a target username"] --> B["FAIL: Login form has no rate limit"];
+      B --> C["Attacker uses a script to try millions of passwords (brute force)"];
+      C --> D["Eventually, the correct password is found"];
+      D --> E["Attacker gains access to the account"];
+    end
+    subgraph "Attack Vector: Weak Session IDs"
+        F["User logs in"] --> G["Server generates a session ID"];
+        G --> H["FAIL: Session ID is easily guessable (e.g., sequential numbers)"];
+        H --> I["Attacker's script guesses valid session IDs"];
+        I --> J["Attacker hijacks a valid user session"];
+    end
+    style B fill:#f8d7da,stroke:#f5c6cb
+    style H fill:#f8d7da,stroke:#f5c6cb`,
     vulnerableCode: {
       language: 'Python',
       code: `# Vulnerable: No rate limiting on login attempts
@@ -218,7 +298,22 @@ def login():
     description: 'Verifying software updates and data integrity.',
     longDescription: '• Lack of protection against integrity violations.\n• Using plugins/libraries from untrusted sources.\n• Insecure CI/CD pipelines are a major risk.',
     impact: 'Can lead to the execution of malicious code, unauthorized system modifications, or the compromise of sensitive data.',
-    diagramId: 'diagram-integrity-failures',
+    diagramCode: `flowchart TD
+    subgraph "Insecure Deserialization Attack"
+      A["Application serializes an object and stores it in a user's cookie"] --> B["User receives the cookie with serialized data"];
+      B --> C["Attacker modifies the serialized data in the cookie to include a malicious payload"];
+      C --> D["Attacker sends the modified cookie back to the application"];
+      D --> E["FAIL: Application deserializes the data without validation or integrity checks"];
+      E --> F["The malicious payload is executed on the server, leading to Remote Code Execution"];
+    end
+    subgraph "Insecure Update Pipeline"
+        G["CI/CD pipeline pulls dependencies from a public repository"] --> H["FAIL: No integrity check (e.g., hash validation) on downloaded packages"];
+        H --> I["An attacker compromises the public repository and injects malicious code into a dependency"];
+        I --> J["The compromised dependency is built into the application"];
+        J --> K["The malicious code runs with the application's privileges"];
+    end
+    style E fill:#f8d7da,stroke:#f5c6cb
+    style H fill:#f8d7da,stroke:#f5c6cb`,
     vulnerableCode: {
       language: 'Shell',
       code: `# Vulnerable: Fetching and executing a script without integrity checks.
@@ -241,7 +336,16 @@ fi`,
     description: 'Insufficient logging and monitoring.',
     longDescription: '• Insufficient logging, monitoring, and incident response.\n• Allows attackers to persist and pivot.\n• Breach detection time is often over 200 days.',
     impact: 'Delays in detecting and responding to attacks, increasing the potential damage and allowing attackers to remain undetected for long periods.',
-    diagramId: 'diagram-logging-failures',
+    diagramCode: `flowchart TD
+    A["Attacker performs suspicious activities (e.g., multiple failed logins, probing for vulnerabilities)"] --> B["Application Server"];
+    B --> C["FAIL: Application does not log these security-relevant events"];
+    C --> D["No logs are sent to a monitoring system"];
+    D --> E["No alerts are triggered"];
+    E --> F["Attacker continues their attack, eventually succeeding"];
+    F --> G["FAIL: The successful breach is also not logged properly"];
+    G --> H["The attacker remains undetected for an extended period, exfiltrating data or causing damage"];
+    style C fill:#f8d7da,stroke:#f5c6cb
+    style G fill:#f8d7da,stroke:#f5c6cb`,
     vulnerableCode: {
       language: 'Java',
       code: `// Vulnerable: A critical security event (failed login) is not logged.
@@ -270,7 +374,22 @@ try {
     description: 'Server requests to an arbitrary domain.',
     longDescription: '• Application fetches a remote resource without validating user-supplied URL.\n• Attacker can make the server send crafted requests.\n• Used to probe internal networks or attack internal services.',
     impact: 'Can lead to information disclosure, denial of service, and remote code execution against internal systems.',
-    diagramId: 'diagram-ssrf',
+    diagramCode: `flowchart TD
+    subgraph "Internet"
+      A["Attacker"]
+    end
+    subgraph "DMZ / Public Network"
+      B["Vulnerable Web Application"]
+    end
+    subgraph "Internal Network"
+      C["Internal Service (e.g., Admin Panel at 192.168.1.10)"]
+      D["Internal Database (at 192.168.1.11)"]
+    end
+    A -- "Sends request with malicious URL: 'http://192.168.1.10/admin'" --> B;
+    B -- "FAIL: Server does not validate the URL" --> C;
+    C -- "Returns internal admin page content" --> B;
+    B -- "Forwards internal content to attacker" --> A;
+    style B -- "FAIL: Server does not validate the URL" --> C fill:#f8d7da,stroke:#f5c6cb`,
     vulnerableCode: {
       language: 'Python (Flask)',
       code: `@app.route('/fetch-image')
