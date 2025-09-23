@@ -156,10 +156,7 @@ $stmt->execute(['username' => $username]);`,
     },
     secureCode: {
       language: 'JSP',
-      code: `<!-- Secure: User input is properly escaped/encoded before being displayed -->
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<% String query = request.getParameter("q"); %>
-<p>You searched for: <strong><c:out value="\\${param.q}" /></strong></p>`,
+      code: '<!-- Secure: User input is properly escaped/encoded before being displayed -->\n<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>\n<% String query = request.getParameter("q"); %>\n<p>You searched for: <strong><c:out value="${param.q}" /></strong></p>',
     },
   },
   {
@@ -453,3 +450,5 @@ def fetch_image():
     },
   },
 ];
+    
+    
