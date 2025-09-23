@@ -1,14 +1,9 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
-import mermaid from 'mermaid';
+import type { Mermaid } from 'mermaid';
 import { useTheme } from 'next-themes';
-
-mermaid.initialize({
-  startOnLoad: false,
-  theme: 'default',
-  securityLevel: 'loose',
-});
 
 type MermaidDiagramProps = {
   chart: string;
@@ -22,6 +17,12 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
     let isMounted = true;
     const renderMermaid = async () => {
       try {
+        const mermaid: Mermaid = (await import('mermaid')).default;
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: 'default',
+          securityLevel: 'loose',
+        });
         const { svg: renderedSvg } = await mermaid.render(`mermaid-${Math.random().toString(36).substring(7)}`, chart);
         if (isMounted) {
           setSvg(renderedSvg);
