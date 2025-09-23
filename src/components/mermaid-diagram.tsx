@@ -2,7 +2,6 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import type { Mermaid } from 'mermaid';
 import { useTheme } from 'next-themes';
 
 type MermaidDiagramProps = {
@@ -17,7 +16,7 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
     let isMounted = true;
     const renderMermaid = async () => {
       try {
-        const mermaid: Mermaid = (await import('mermaid')).default;
+        const mermaid = (await import('mermaid')).default;
         mermaid.initialize({
           startOnLoad: false,
           theme: 'default',
