@@ -11,7 +11,10 @@ export function CodeBlock({ code, language, className }: CodeBlockProps) {
     <div className={cn("relative rounded-lg bg-card border shadow-sm", className)}>
       <div className="absolute top-2 right-3 text-xs uppercase text-muted-foreground font-semibold">{language}</div>
       <pre className="p-4 pt-8 text-sm overflow-x-auto font-code bg-transparent rounded-lg">
-        <code className="text-foreground">{code}</code>
+        <code
+          className="text-foreground"
+          dangerouslySetInnerHTML={{ __html: code }}
+        />
       </pre>
     </div>
   );
