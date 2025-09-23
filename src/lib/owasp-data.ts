@@ -95,15 +95,50 @@ String hash = argon2.hash(10, 65536, 1, password.toCharArray());</strong>`,
     },
   },
   {
-    id: 'A03',
-    slug: 'injection',
-    title: 'Injection',
-    description: 'Untrusted data sent to an interpreter.',
+    id: 'A03-SQLi',
+    slug: 'injection-sql',
+    title: 'Injection (SQL)',
+    description: 'Untrusted data sent to a SQL interpreter.',
     longDescription: `• Occurs when untrusted data is sent to a code interpreter.
 • SQL injection: Malicious SQL statements are inserted into an entry field for execution.
-• Cross-Site Scripting (XSS): Malicious scripts are injected into otherwise benign and trusted websites.
-• Other types: NoSQL, OS command, LDAP injection.`,
+• Can lead to data theft, modification, or deletion.`,
     impact: 'Can result in data loss, corruption, or disclosure to unauthorized parties, leading to denial of service or complete host takeover.',
+    diagramCode: `flowchart TD
+    subgraph "Legitimate Query"
+      A["User inputs 'smith' into a search field"] --> B["Application builds a SQL query string"];
+      B --> C["Query: SELECT * FROM users WHERE name = 'smith'"];
+      C --> D["Database returns results for 'smith'"];
+    end
+    subgraph "SQL Injection Attack"
+      E["Attacker inputs 'smith' OR 1=1; --' into the search field"] --> F["Application builds a SQL query string"];
+      F --> G["FAIL: The application concatenates the input directly into the query"];
+      G --> H["Query: SELECT * FROM users WHERE name = 'smith' OR 1=1; --'"];
+      H --> I["The 'OR 1=1' is always true, and '--' comments out the rest of the original query"];
+      I --> J["Database returns ALL users from the table"];
+    end`,
+    vulnerableCode: {
+      language: 'PHP',
+      code: `$username = $_POST['username'];
+// Vulnerable: User input is directly concatenated into the SQL query
+$sql = "SELECT * FROM users WHERE username = '<strong>$username</strong>';";`,
+    },
+    secureCode: {
+      language: 'PHP',
+      code: `$username = $_POST['username'];
+// Secure: Uses a prepared statement with parameter binding
+$stmt = $pdo->prepare("SELECT * FROM users WHERE username = <strong>:username</strong>");
+$stmt->execute(['username' => $username]);`,
+    },
+  },
+    {
+    id: 'A03-XSS',
+    slug: 'injection-xss',
+    title: 'Injection (XSS)',
+    description: 'Untrusted data rendered on a web page.',
+    longDescription: `• Occurs when untrusted data is sent to a web browser without validation.
+• Cross-Site Scripting (XSS): Malicious scripts are injected into otherwise benign and trusted websites.
+• Can be used to steal user sessions, deface websites, or redirect users to malicious sites.`,
+    impact: 'Can lead to theft of user session cookies, credentials, and performing actions on behalf of the user.',
     diagramCode: `flowchart TD
     subgraph "XSS Attack"
         A["Attacker crafts a URL with a malicious script: /search?q=<script>alert(1)</script>"] --> B["Attacker tricks a victim into clicking the link"];
@@ -124,7 +159,7 @@ String hash = argon2.hash(10, 65536, 1, password.toCharArray());</strong>`,
       code: `<!-- Secure: User input is properly escaped/encoded before being displayed -->
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <% String query = request.getParameter("q"); %>
-<p>You searched for: <strong><c:out value="$\\{param.q}" /></strong></p>`,
+<p>You searched for: <strong><c:out value="\\${param.q}" /></strong></p>`,
     },
   },
   {
